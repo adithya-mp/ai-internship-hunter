@@ -6,7 +6,6 @@ Pydantic models for skill tracking and analysis.
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
-import uuid
 
 
 class SkillCreate(BaseModel):
@@ -18,7 +17,7 @@ class SkillCreate(BaseModel):
 
 class SkillResponse(BaseModel):
     """Schema for skill response."""
-    id: uuid.UUID
+    id: str
     name: str
     proficiency: int
     source: str
@@ -35,11 +34,12 @@ class SkillGapAnalysis(BaseModel):
     missing_skills: List[str]
     match_percentage: float
     recommendations: List[dict]  # {skill, reason, resources}
+    learning_roadmap: Optional[List[dict]] = []  # {week, focus, activities}
 
 
 class SkillAnalyzeRequest(BaseModel):
     """Schema for analyzing skill gap against a job."""
-    job_id: uuid.UUID
+    job_id: str
 
 
 class ChatMessage(BaseModel):
@@ -56,7 +56,7 @@ class ChatResponse(BaseModel):
 
 class EmailRequest(BaseModel):
     """Schema for email generation."""
-    job_id: uuid.UUID
+    job_id: str
     email_type: str = "cold"  # cold, followup
     custom_instructions: Optional[str] = None
 

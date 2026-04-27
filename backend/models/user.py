@@ -1,11 +1,6 @@
-"""
-User Model
-Stores user accounts, profiles, and authentication data.
-"""
-
 import uuid
 from datetime import datetime
-from sqlalchemy import String, Text, DateTime, JSON, Uuid
+from sqlalchemy import String, Text, DateTime, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from database import Base
 
@@ -13,8 +8,8 @@ from database import Base
 class User(Base):
     __tablename__ = "users"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, primary_key=True, default=uuid.uuid4
+    id: Mapped[str] = mapped_column(
+        String(50), primary_key=True, default=lambda: str(uuid.uuid4())
     )
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)

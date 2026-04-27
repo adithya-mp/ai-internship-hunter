@@ -14,13 +14,6 @@ Flow:
 """
 
 import logging
-import sys
-import asyncio
-
-# ─── Windows Loop Policy (Enforcement) ───
-if sys.platform == "win32":
-    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
-
 import uuid
 from datetime import datetime
 from collections import Counter
@@ -60,8 +53,8 @@ def _get_scrapers():
         logger.warning(f"Unstop scraper unavailable: {e}")
 
     try:
-        from scraper.internshala_scraper import InternshalaScraper
-        scrapers.append(("Internshala", InternshalaScraper()))
+        from scraper.internshala_scraper import IntershalaScraper
+        scrapers.append(("Internshala", IntershalaScraper()))
     except Exception as e:
         logger.warning(f"Internshala scraper unavailable: {e}")
 
@@ -257,7 +250,7 @@ async def _store_jobs(session: AsyncSession, all_jobs: List[dict]) -> int:
                 embedding = None
 
             job = Job(
-                id=str(uuid.uuid4()),
+                id=uuid.uuid4(),
                 title=job_data["title"],
                 company=job_data["company"],
                 description=job_data["description"],
@@ -276,16 +269,9 @@ async def _store_jobs(session: AsyncSession, all_jobs: List[dict]) -> int:
 
         except Exception as e:
             logger.error(f"Error storing job '{job_data.get('title', '?')}': {e}")
-            # Rollback so the session isn't poisoned for subsequent inserts
-            await session.rollback()
             continue
 
-    try:
-        await session.commit()
-    except Exception as e:
-        logger.error(f"Error committing stored jobs: {e}")
-        await session.rollback()
-
+    await session.commit()
     return stored_count
 
 

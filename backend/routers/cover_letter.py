@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-import uuid
+
 import os
 
 from database import get_db
@@ -65,7 +65,7 @@ async def create_cover_letter(
     }
 
 @router.get("/{id}/download")
-async def download_cover_letter(id: uuid.UUID, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def download_cover_letter(id: str, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Resume).where(Resume.id == id, Resume.user_id == current_user.id, Resume.doc_type == "cover_letter"))
     cl = result.scalar_one_or_none()
     if not cl or not cl.cover_letter_pdf_path or not os.path.exists(cl.cover_letter_pdf_path):

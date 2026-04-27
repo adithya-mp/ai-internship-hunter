@@ -11,7 +11,7 @@ import uuid
 
 class JobResponse(BaseModel):
     """Schema for job listing response."""
-    id: uuid.UUID
+    id: str
     title: str
     company: str
     description: str
@@ -24,8 +24,15 @@ class JobResponse(BaseModel):
     duration: Optional[str] = None
     scraped_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
+
+
+class JobPaginationResponse(BaseModel):
+    """Schema for paginated job results."""
+    items: List[JobResponse]
+    total: int
+    page: int
+    per_page: int
 
 
 class JobMatchResponse(BaseModel):
@@ -48,13 +55,13 @@ class JobFilterParams(BaseModel):
 
 class SaveJobRequest(BaseModel):
     """Schema for saving a job."""
-    job_id: uuid.UUID
+    job_id: str
 
 
 class ApplicationCreate(BaseModel):
     """Schema for creating an application."""
-    job_id: uuid.UUID
-    resume_id: Optional[uuid.UUID] = None
+    job_id: str
+    resume_id: Optional[str] = None
     notes: Optional[str] = None
 
 
@@ -66,10 +73,10 @@ class ApplicationUpdate(BaseModel):
 
 class ApplicationResponse(BaseModel):
     """Schema for application response."""
-    id: uuid.UUID
-    user_id: uuid.UUID
-    job_id: uuid.UUID
-    resume_id: Optional[uuid.UUID] = None
+    id: str
+    user_id: str
+    job_id: str
+    resume_id: Optional[str] = None
     status: str
     notes: Optional[str] = None
     applied_at: datetime

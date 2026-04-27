@@ -12,46 +12,33 @@ import os
 from config import get_settings
 from database import init_db
 
-import sys
-import asyncio
-
-# ─── Windows Asyncio Fix ───
-# Playwright and other subprocess-based tools require ProactorEventLoop on Windows.
-if sys.platform == "win32":
-    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
-
 settings = get_settings()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown events."""
-    import platform
-    loop_name = type(asyncio.get_event_loop()).__name__
-    print(f"ApplyIQ Backend Starting on {platform.system()}...")
-    print(f"Current Event Loop: {loop_name}")
-    
-    if sys.platform == "win32" and loop_name != "ProactorEventLoop":
-        print("WARNING: Not using ProactorEventLoop on Windows. Playwright may fail.")
+    print("ApplyIQ Backend Starting...")
 
     # Initialize database tables
     await init_db()
-    print("[OK] Database tables created")
+    print("✓ Database tables created")
 
     # Seed mock jobs on first run (development convenience)
     from scraper.mock_scraper import seed_mock_jobs
     await seed_mock_jobs()
-    print("[OK] Mock jobs seeded (skipped if already exist)")
+    print("✓ Mock jobs seeded (skipped if already exist)")
 
     # Start the multi-platform job scraper scheduler
     from scraper.scheduler import setup_scheduler
     scheduler = setup_scheduler(app, interval_hours=settings.SCRAPE_INTERVAL_HOURS)
-    print(f"[OK] Job scraper scheduled every {settings.SCRAPE_INTERVAL_HOURS} hours")
+    print(f"✓ Job scraper scheduled every {settings.SCRAPE_INTERVAL_HOURS} hours")
 
     # Run one immediate scraping cycle in background (non-blocking)
+    import asyncio
     from scraper.scheduler import run_scraping_cycle
     asyncio.create_task(run_scraping_cycle())
-    print("[OK] Initial scraping cycle triggered (running in background)")
+    print("✓ Initial scraping cycle triggered (running in background)")
 
     yield
 
@@ -103,6 +90,7 @@ async def health_check():
 @app.post("/api/scrape/trigger", tags=["Admin"])
 async def trigger_scrape():
     """Manually trigger a scraping cycle (useful for testing)."""
+    import asyncio
     from scraper.scheduler import run_scraping_cycle
     asyncio.create_task(run_scraping_cycle())
     return {"status": "scraping cycle triggered", "message": "Check logs for progress"}

@@ -103,17 +103,24 @@ async def generate_resume(
         custom_instructions=f"Additional instructions: {custom_instructions}" if custom_instructions else "",
     )
 
+    logger.info(f"AI generation request for {job_title} at {company}")
     result = await generate_json(prompt, RESUME_SYSTEM_PROMPT)
 
     # Validate and ensure required fields
     if not result:
+        logger.warning("AI generation failed, using fallback resume content")
         result = _get_fallback_resume(user_profile, job_title, company)
+
+    # Logic to merge skills: use job-required skills + relevant user profile skills
+    user_skills = set(user_profile.get("skills", []))
+    job_skills = set(required_skills or [])
+    merged_skills = list(job_skills.union(user_skills))[:15] # Cap at 15
 
     # Ensure all required keys exist
     result.setdefault("summary", "")
     result.setdefault("experience", [])
     result.setdefault("education", [])
-    result.setdefault("skills", required_skills or [])
+    result["skills"] = list(set(result.get("skills", []) + merged_skills))[:15]
     result.setdefault("projects", [])
     result.setdefault("certifications", [])
     result.setdefault("achievements", [])

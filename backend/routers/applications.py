@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import List
-import uuid
+
 
 from database import get_db
 from models.application import Application
@@ -53,7 +53,7 @@ async def list_applications(current_user: User = Depends(get_current_user), db: 
 
 @router.put("/{app_id}", response_model=ApplicationResponse)
 async def update_application(
-    app_id: uuid.UUID,
+    app_id: str,
     app_update: ApplicationUpdate,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)

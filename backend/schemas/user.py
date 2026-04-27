@@ -31,7 +31,7 @@ class UserProfileUpdate(BaseModel):
 
 class UserResponse(BaseModel):
     """Schema for user response (no sensitive data)."""
-    id: uuid.UUID
+    id: str
     email: str
     full_name: str
     bio: Optional[str] = None

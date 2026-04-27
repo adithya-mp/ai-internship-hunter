@@ -5,19 +5,19 @@ Jobs Router — Updated with scrape-trigger and resume-based matching endpoints.
 from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
-
+import uuid
 
 from database import get_db
 from models.job import Job, SavedJob
 from models.user import User
-from schemas.job import JobResponse, JobMatchResponse, ApplicationCreate, ApplicationUpdate, ApplicationResponse, JobPaginationResponse
+from schemas.job import JobResponse, JobMatchResponse, ApplicationCreate, ApplicationUpdate, ApplicationResponse
 from utils.security import get_current_user
 from services.job_matcher import match_jobs
 
 router = APIRouter()
 
 
-@router.get("", response_model=JobPaginationResponse)
+@router.get("", response_model=dict)
 async def list_jobs(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
@@ -141,19 +141,8 @@ async def get_job_sources(db: AsyncSession = Depends(get_db)):
     return {"sources": sources}
 
 
-@router.get("/user/saved", response_model=list[JobResponse])
-async def get_saved_jobs(
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    result = await db.execute(
-        select(Job).join(SavedJob).where(SavedJob.user_id == current_user.id)
-    )
-    return result.scalars().all()
-
-
 @router.get("/{job_id}", response_model=JobResponse)
-async def get_job(job_id: str, db: AsyncSession = Depends(get_db)):
+async def get_job(job_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Job).where(Job.id == job_id))
     job = result.scalar_one_or_none()
     if not job:
@@ -163,7 +152,7 @@ async def get_job(job_id: str, db: AsyncSession = Depends(get_db)):
 
 @router.post("/{job_id}/save")
 async def save_job(
-    job_id: str,
+    job_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -184,7 +173,7 @@ async def save_job(
 
 @router.delete("/{job_id}/save")
 async def unsave_job(
-    job_id: str,
+    job_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -196,3 +185,14 @@ async def unsave_job(
         await db.delete(saved)
         await db.commit()
     return {"status": "unsaved"}
+
+
+@router.get("/user/saved", response_model=list[JobResponse])
+async def get_saved_jobs(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(Job).join(SavedJob).where(SavedJob.user_id == current_user.id)
+    )
+    return result.scalars().all()

@@ -13,7 +13,7 @@ from scraper.base_scraper import BaseScraper
 logger = logging.getLogger(__name__)
 
 
-class InternshalaScraper(BaseScraper):
+class IntershalaScraper(BaseScraper):
     """
     Scrapes internship listings from Internshala.
     Primary method: JSON API (fast, reliable).
@@ -145,14 +145,6 @@ class InternshalaScraper(BaseScraper):
 
     async def _scrape_via_playwright(self, query: str, location: str) -> List[dict]:
         """Playwright fallback scraper for Internshala."""
-        # Pre-check: skip Playwright if the event loop doesn't support subprocesses
-        # (e.g. uvicorn reload mode on Windows uses a loop without subprocess support)
-        import asyncio
-        loop = asyncio.get_event_loop()
-        if not hasattr(loop, 'subprocess_exec') or type(loop).__name__ not in ('ProactorEventLoop', '_UnixSelectorEventLoop'):
-            logger.debug("Skipping Playwright: current event loop doesn't support subprocesses")
-            return []
-
         jobs = []
         try:
             from playwright.async_api import async_playwright

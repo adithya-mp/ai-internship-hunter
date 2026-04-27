@@ -6,12 +6,11 @@ Pydantic models for resume and cover letter generation.
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
-import uuid
 
 
 class ResumeGenerateRequest(BaseModel):
     """Schema for generating a tailored resume."""
-    job_id: uuid.UUID
+    job_id: str
     custom_instructions: Optional[str] = None
 
 
@@ -28,9 +27,9 @@ class ResumeContent(BaseModel):
 
 class ResumeResponse(BaseModel):
     """Schema for resume response."""
-    id: uuid.UUID
-    user_id: uuid.UUID
-    target_job_id: Optional[uuid.UUID] = None
+    id: str
+    user_id: str
+    target_job_id: Optional[str] = None
     content: dict
     pdf_path: Optional[str] = None
     doc_type: str
@@ -42,13 +41,13 @@ class ResumeResponse(BaseModel):
 
 class CoverLetterRequest(BaseModel):
     """Schema for generating a cover letter."""
-    job_id: uuid.UUID
+    job_id: str
     custom_instructions: Optional[str] = None
 
 
 class CoverLetterResponse(BaseModel):
     """Schema for cover letter response."""
-    id: uuid.UUID
+    id: str
     content: str
     job_title: str
     company: str

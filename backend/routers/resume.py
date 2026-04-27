@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-import uuid
+import logging
+
 import os
 
 from database import get_db
@@ -15,6 +16,7 @@ from services.resume_generator import generate_resume
 from utils.pdf_builder import generate_resume_pdf
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 @router.post("/generate", response_model=ResumeResponse)
 async def create_resume(
@@ -23,10 +25,14 @@ async def create_resume(
     db: AsyncSession = Depends(get_db)
 ):
     # Fetch job details
-    result = await db.execute(select(Job).where(Job.id == request.job_id))
+    job_id = str(request.job_id)
+    logger.info(f"Generating resume for job_id: {job_id}")
+    
+    result = await db.execute(select(Job).where(Job.id == job_id))
     job = result.scalar_one_or_none()
     if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
+        logger.error(f"Job not found for ID: {job_id}")
+        raise HTTPException(status_code=404, detail=f"Job not found (ID: {job_id})")
 
     profile_data = current_user.profile_data or {}
     profile_data["full_name"] = current_user.full_name
@@ -65,7 +71,7 @@ async def list_resumes(current_user: User = Depends(get_current_user), db: Async
     return result.scalars().all()
 
 @router.get("/{resume_id}", response_model=ResumeResponse)
-async def get_resume(resume_id: uuid.UUID, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def get_resume(resume_id: str, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Resume).where(Resume.id == resume_id, Resume.user_id == current_user.id))
     resume = result.scalar_one_or_none()
     if not resume:
@@ -73,7 +79,7 @@ async def get_resume(resume_id: uuid.UUID, current_user: User = Depends(get_curr
     return resume
 
 @router.get("/{resume_id}/download")
-async def download_resume(resume_id: uuid.UUID, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def download_resume(resume_id: str, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Resume).where(Resume.id == resume_id, Resume.user_id == current_user.id))
     resume = result.scalar_one_or_none()
     if not resume or not resume.pdf_path or not os.path.exists(resume.pdf_path):

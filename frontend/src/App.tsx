@@ -12,6 +12,7 @@ import Dashboard from './pages/Dashboard.tsx';
 import Jobs from './pages/Jobs.tsx';
 import ResumeBuilder from './pages/ResumeBuilder.tsx';
 import CoverLetter from './pages/CoverLetter.tsx';
+import Skills from './pages/Skills.tsx';
 
 function App() {
   const { checkAuth, isAuthenticated, isLoading } = useAuthStore();
@@ -33,7 +34,7 @@ function App() {
       <Routes>
         <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" />} />
         <Route path="/register" element={!isAuthenticated ? <Register /> : <Navigate to="/dashboard" />} />
-        
+
         {/* Protected Routes */}
         <Route path="/" element={isAuthenticated ? <Layout /> : <Navigate to="/login" />}>
           <Route index element={<Navigate to="/dashboard" />} />
@@ -41,6 +42,7 @@ function App() {
           <Route path="jobs" element={<Jobs />} />
           <Route path="resumes" element={<ResumeBuilder />} />
           <Route path="cover-letter" element={<CoverLetter />} />
+          <Route path="skills" element={<Skills />} />
         </Route>
       </Routes>
     </BrowserRouter>

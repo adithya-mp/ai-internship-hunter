@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Briefcase, FileText, Layers, Mail, Compass, LogOut } from 'lucide-react';
+import { LayoutDashboard, Briefcase, FileText, Layers, Mail, LogOut } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 
 const navigation = [
@@ -8,7 +8,6 @@ const navigation = [
   { name: 'Resumes', to: '/resumes', icon: FileText },
   { name: 'Cover Letters', to: '/cover-letter', icon: Mail },
   { name: 'Skills', to: '/skills', icon: Layers },
-  { name: 'Explore', to: '/explore', icon: Compass },
 ];
 
 export default function Sidebar() {

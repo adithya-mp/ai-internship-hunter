@@ -20,7 +20,7 @@ export default function CoverLetter() {
     setError('');
     
     try {
-      const res = await apiClient.post('/cover_letter/generate', {
+      const res = await apiClient.post('/cover-letter/generate', {
         job_id: jobId,
         custom_instructions: customInstructions
       });
@@ -36,7 +36,7 @@ export default function CoverLetter() {
   const downloadPdf = async () => {
     if (!generatedLetter) return;
     try {
-      const res = await apiClient.get(`/cover_letter/${generatedLetter.id}/download`, { responseType: 'blob' });
+      const res = await apiClient.get(`/cover-letter/${generatedLetter.id}/download`, { responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement('a');
       link.href = url;

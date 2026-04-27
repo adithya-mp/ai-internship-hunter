@@ -37,8 +37,9 @@ class Settings(BaseSettings):
     MAX_UPLOAD_SIZE_MB: int = 10
 
     class Config:
-        env_file = ".env"
+        env_file = (".env", "../.env")
         case_sensitive = True
+        extra = "ignore"
 
 
 @lru_cache()

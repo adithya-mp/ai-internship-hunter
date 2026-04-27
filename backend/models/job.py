@@ -1,11 +1,6 @@
-"""
-Job Model
-Stores scraped internship/job listings.
-"""
-
 import uuid
 from datetime import datetime
-from sqlalchemy import String, Text, DateTime, JSON, ForeignKey, Uuid
+from sqlalchemy import String, Text, DateTime, JSON, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from database import Base
 
@@ -13,8 +8,8 @@ from database import Base
 class Job(Base):
     __tablename__ = "jobs"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, primary_key=True, default=uuid.uuid4
+    id: Mapped[str] = mapped_column(
+        String(50), primary_key=True, default=lambda: str(uuid.uuid4())
     )
     title: Mapped[str] = mapped_column(String(500), nullable=False, index=True)
     company: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
@@ -42,14 +37,14 @@ class Job(Base):
 class SavedJob(Base):
     __tablename__ = "saved_jobs"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, primary_key=True, default=uuid.uuid4
+    id: Mapped[str] = mapped_column(
+        String(50), primary_key=True, default=lambda: str(uuid.uuid4())
     )
-    user_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey("users.id"), nullable=False
+    user_id: Mapped[str] = mapped_column(
+        String(50), ForeignKey("users.id"), nullable=False
     )
-    job_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey("jobs.id"), nullable=False
+    job_id: Mapped[str] = mapped_column(
+        String(50), ForeignKey("jobs.id"), nullable=False
     )
     saved_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, nullable=False
