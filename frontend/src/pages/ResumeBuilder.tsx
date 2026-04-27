@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { FileText, Wand2, Download, CheckCircle } from 'lucide-react';
+import { FileText, Download, CheckCircle } from 'lucide-react';
 import { apiClient } from '../api/client';
 
 export default function ResumeBuilder() {

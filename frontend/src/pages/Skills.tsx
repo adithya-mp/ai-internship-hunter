@@ -2,10 +2,6 @@ import { useEffect, useState } from 'react';
 import { Layers, Target, BookOpen, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { apiClient } from '../api/client';
 
-interface Skill {
-  name: string;
-  count: number;
-}
 
 export default function Skills() {
   const [userSkills, setUserSkills] = useState<string[]>([]);
