@@ -21,6 +21,8 @@ interface AuthState {
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   checkAuth: () => Promise<void>;
+  oauthLogin: (provider: string, email: string, fullName: string, profilePhoto?: string) => Promise<void>;
+  updateProfile: (profile: { full_name?: string; bio?: string; profile_data?: any }) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -79,6 +81,41 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } catch {
       localStorage.removeItem('applyiq_token');
       set({ user: null, token: null, isAuthenticated: false, isLoading: false });
+    }
+  },
+
+  oauthLogin: async (provider, email, fullName, profilePhoto) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await apiClient.post('/auth/oauth', {
+        provider,
+        email,
+        full_name: fullName,
+        profile_photo: profilePhoto || null
+      });
+      const { access_token, user } = response.data;
+      localStorage.setItem('applyiq_token', access_token);
+      set({ user, token: access_token, isAuthenticated: true, isLoading: false });
+    } catch (error: any) {
+      set({ 
+        error: error.response?.data?.detail || 'Failed to authenticate via OAuth', 
+        isLoading: false 
+      });
+      throw error;
+    }
+  },
+
+  updateProfile: async (profile) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await apiClient.put('/auth/me', profile);
+      set({ user: response.data, isLoading: false });
+    } catch (error: any) {
+      set({ 
+        error: error.response?.data?.detail || 'Failed to update profile', 
+        isLoading: false 
+      });
+      throw error;
     }
   }
 }));

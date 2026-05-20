@@ -22,12 +22,36 @@ You create ATS-optimized resumes that emphasize:
 
 ALWAYS respond in valid JSON format."""
 
-RESUME_GENERATE_PROMPT = """Create a tailored resume for the following job:
+TEMPLATE_ANALYSIS_PROMPT = """Analyze this job posting and identify the optimal resume design, sections, keyword strategies, and achievements/skills prioritized by hiring teams at this company or industry.
+
+**Job Title:** {job_title}
+**Company:** {company}
+**Job Description:**
+{job_description}
+
+Provide a JSON response containing:
+{{
+    "accepted_patterns": "Describe the resume format/template typically favored (e.g. chronological, project-heavy, core competence highlight)",
+    "keywords": ["list", "of", "high-priority", "keywords"],
+    "formatting_conventions": "Recommended section layout or styling rules (e.g., technical skills at top, project-focused)",
+    "tone_focus": "The specific tone to emphasize (e.g., highly quantitative, research-driven, product-oriented)",
+    "bullet_recommendations": "Advice on how to phrase bullet points for experience/projects to appeal to this company's culture"
+}}
+"""
+
+RESUME_GENERATE_PROMPT = """Create a tailored resume for the following job using the provided Recruiter Template Analysis and candidate profile.
 
 **Job Title:** {job_title}
 **Company:** {company}
 **Job Description:** {job_description}
 **Required Skills:** {required_skills}
+
+**Recruiter Template Analysis (Signals to follow):**
+- Accepted Patterns: {accepted_patterns}
+- High-Priority Keywords: {keywords}
+- Formatting/Section Layout: {formatting_conventions}
+- Tone Focus: {tone_focus}
+- Bullet Phrasing Recommendations: {bullet_recommendations}
 
 **Candidate Profile:**
 - Name: {user_name}
@@ -70,11 +94,26 @@ Generate a JSON resume with this structure:
 }}
 
 IMPORTANT:
-- Tailor every section to match the job requirements
-- Use strong action verbs
-- Include quantifiable metrics where possible
-- Prioritize skills that match the job description
-- Make the summary compelling and specific to this role"""
+- Align content to the Recruiter Template Analysis guidelines.
+- Integrate the high-priority keywords naturally across experience, projects, and skills.
+- Structure bullet points using strong action verbs and include metrics where possible.
+- Return only a valid JSON object matching the schema. Do not truncate the result, generate a complete, full-length resume."""
+
+
+async def analyze_job_template(job_title: str, company: str, job_description: str) -> dict:
+    """Analyze the target job to extract resume design signals."""
+    prompt = TEMPLATE_ANALYSIS_PROMPT.format(
+        job_title=job_title,
+        company=company,
+        job_description=job_description[:3000]
+    )
+    system_prompt = "You are a senior recruiter analyzing hiring patterns. Always respond in valid JSON."
+    try:
+        result = await generate_json(prompt, system_prompt)
+        return result or {}
+    except Exception as e:
+        logger.error(f"Error analyzing job template: {e}")
+        return {}
 
 
 async def generate_resume(
@@ -89,11 +128,20 @@ async def generate_resume(
     Generate a tailored resume based on job description and user profile.
     Returns structured resume content as a dict.
     """
+    # 1. Step 1 - Analyze Template
+    template_signals = await analyze_job_template(job_title, company, job_description)
+
+    # 2. Step 2 - Generate Resume
     prompt = RESUME_GENERATE_PROMPT.format(
         job_title=job_title,
         company=company,
-        job_description=job_description[:3000],  # Limit for token budget
+        job_description=job_description[:2500],  # Limit to stay within budget
         required_skills=", ".join(required_skills or []),
+        accepted_patterns=template_signals.get("accepted_patterns", " chronological / tech-stack focused"),
+        keywords=", ".join(template_signals.get("keywords", [])),
+        formatting_conventions=template_signals.get("formatting_conventions", "technical skills, experience, projects"),
+        tone_focus=template_signals.get("tone_focus", "confident, achievement-oriented"),
+        bullet_recommendations=template_signals.get("bullet_recommendations", "start with action verbs, highlight tech stack"),
         user_name=user_profile.get("full_name", "Candidate"),
         bio=user_profile.get("bio", "Technology professional"),
         user_skills=", ".join(user_profile.get("skills", [])),
@@ -114,13 +162,15 @@ async def generate_resume(
     # Logic to merge skills: use job-required skills + relevant user profile skills
     user_skills = set(user_profile.get("skills", []))
     job_skills = set(required_skills or [])
-    merged_skills = list(job_skills.union(user_skills))[:15] # Cap at 15
+    # Also add keywords from template analysis
+    keywords = set(template_signals.get("keywords", []))
+    merged_skills = list(job_skills.union(user_skills).union(keywords))[:20] # Cap at 20
 
     # Ensure all required keys exist
     result.setdefault("summary", "")
     result.setdefault("experience", [])
     result.setdefault("education", [])
-    result["skills"] = list(set(result.get("skills", []) + merged_skills))[:15]
+    result["skills"] = list(set(result.get("skills", []) + merged_skills))[:20]
     result.setdefault("projects", [])
     result.setdefault("certifications", [])
     result.setdefault("achievements", [])

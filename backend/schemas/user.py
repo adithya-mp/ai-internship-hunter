@@ -47,3 +47,12 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserResponse
+
+
+class OAuthRequest(BaseModel):
+    """Schema for OAuth login request."""
+    provider: str
+    email: EmailStr
+    full_name: str
+    profile_photo: Optional[str] = None
+

@@ -4,7 +4,7 @@ from sqlalchemy import select
 
 from database import get_db
 from models.user import User
-from schemas.user import UserRegister, UserLogin, UserResponse, TokenResponse, UserProfileUpdate
+from schemas.user import UserRegister, UserLogin, UserResponse, TokenResponse, UserProfileUpdate, OAuthRequest
 from utils.security import hash_password, verify_password, create_access_token, get_current_user
 from services.ai_engine import generate_embedding
 
@@ -37,6 +37,54 @@ async def login(login_data: UserLogin, db: AsyncSession = Depends(get_db)):
 
     if not user or not verify_password(login_data.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Incorrect email or password")
+
+    access_token = create_access_token(user_id=user.id)
+    return {"access_token": access_token, "token_type": "bearer", "user": user}
+
+@router.post("/oauth", response_model=TokenResponse)
+async def oauth_login(oauth_data: OAuthRequest, db: AsyncSession = Depends(get_db)):
+    # Check if email exists
+    result = await db.execute(select(User).where(User.email == oauth_data.email))
+    user = result.scalar_one_or_none()
+
+    if not user:
+        # Create new user for OAuth
+        # Generate user embedding as empty for now, will get updated when profile is modified
+        user = User(
+            email=oauth_data.email,
+            password_hash="",  # No password for OAuth
+            full_name=oauth_data.full_name,
+            profile_data={
+                "photo_url": oauth_data.profile_photo or "",
+                "provider": oauth_data.provider,
+                "location": "India",
+                "current_role": "Software Engineering Student",
+                "target_role": "Software Engineer Intern",
+                "linkedin_url": f"https://linkedin.com/in/{oauth_data.full_name.lower().replace(' ', '')}" if oauth_data.provider == "linkedin" else "",
+                "portfolio_url": "",
+                "experience": [],
+                "education": [],
+                "projects": []
+            }
+        )
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+    else:
+        # User exists, update profile photo/provider if not present
+        profile = user.profile_data or {}
+        updated = False
+        if "photo_url" not in profile or not profile["photo_url"]:
+            profile["photo_url"] = oauth_data.profile_photo or ""
+            updated = True
+        if "provider" not in profile:
+            profile["provider"] = oauth_data.provider
+            updated = True
+        if updated:
+            user.profile_data = profile
+            db.add(user)
+            await db.commit()
+            await db.refresh(user)
 
     access_token = create_access_token(user_id=user.id)
     return {"access_token": access_token, "token_type": "bearer", "user": user}

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { apiClient } from '../api/client';
 
-interface Job {
+export interface Job {
   id: string;
   title: string;
   company: string;
@@ -13,17 +13,25 @@ interface Job {
   apply_url?: string;
 }
 
+export interface SelectedJob extends Job {
+  job_id: string;      // Inferred external ID
+  source_url: string;  // apply_url
+}
+
 interface JobState {
   jobs: Job[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   matchedJobs: any[];
   savedJobs: Job[];
   isLoading: boolean;
+  selectedJob: SelectedJob | null;
 
   fetchJobs: (query?: string, source?: string) => Promise<void>;
   fetchMatchedJobs: () => Promise<void>;
   fetchSavedJobs: () => Promise<void>;
   saveJob: (jobId: string) => Promise<void>;
+  selectJob: (job: Job) => void;
+  clearSelectedJob: () => void;
 }
 
 export const useJobStore = create<JobState>((set) => ({
@@ -31,6 +39,7 @@ export const useJobStore = create<JobState>((set) => ({
   matchedJobs: [],
   savedJobs: [],
   isLoading: false,
+  selectedJob: null,
 
   fetchJobs: async (query = '', source?: string) => {
     set({ isLoading: true });
@@ -78,4 +87,39 @@ export const useJobStore = create<JobState>((set) => ({
       console.error('saveJob error:', error);
     }
   },
+
+  selectJob: (job: Job) => {
+    let jobId = job.id; // fallback
+    const sourceUrl = job.apply_url || '';
+
+    if (job.source === 'linkedin' && job.apply_url) {
+      // URL: https://www.linkedin.com/jobs/view/123456789
+      const match = job.apply_url.match(/\/view\/(\d+)/);
+      if (match) {
+        jobId = match[1];
+      }
+    } else if (job.source === 'internshala' && job.apply_url) {
+      // URL: https://internshala.com/internship/detail/software-development-internship-171612...
+      const match = job.apply_url.match(/-(\d+)$/) || job.apply_url.match(/\/detail\/.*?-(\d+)/);
+      if (match) {
+        jobId = match[1];
+      } else {
+        const segments = job.apply_url.split('/');
+        const last = segments[segments.length - 1];
+        if (last) jobId = last;
+      }
+    } else if (job.source === 'unstop' && job.apply_url) {
+      // URL: https://unstop.com/o/123456 or similar
+      const match = job.apply_url.match(/\/o\/(\d+)/) || job.apply_url.match(/-(\d+)$/);
+      if (match) {
+        jobId = match[1];
+      }
+    }
+    set({ selectedJob: { ...job, job_id: jobId, source_url: sourceUrl } });
+  },
+
+  clearSelectedJob: () => {
+    set({ selectedJob: null });
+  },
 }));
+

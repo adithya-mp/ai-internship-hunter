@@ -15,6 +15,13 @@ class SkillCreate(BaseModel):
     category: Optional[str] = None
 
 
+class SkillUpdate(BaseModel):
+    """Schema for updating a skill."""
+    proficiency: Optional[int] = None
+    category: Optional[str] = None
+
+
+
 class SkillResponse(BaseModel):
     """Schema for skill response."""
     id: str

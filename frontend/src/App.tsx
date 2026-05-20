@@ -6,8 +6,8 @@ import { useAuthStore } from './store/authStore';
 import Layout from './components/layout/Layout.tsx';
 
 // Pages
-import Login from './pages/Login.tsx';
-import Register from './pages/Register.tsx';
+import SignIn from './pages/SignIn.tsx';
+import SignUp from './pages/SignUp.tsx';
 import Dashboard from './pages/Dashboard.tsx';
 import Jobs from './pages/Jobs.tsx';
 import ResumeBuilder from './pages/ResumeBuilder.tsx';
@@ -32,11 +32,13 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" />} />
-        <Route path="/register" element={!isAuthenticated ? <Register /> : <Navigate to="/dashboard" />} />
+        <Route path="/signin" element={!isAuthenticated ? <SignIn /> : <Navigate to="/dashboard" />} />
+        <Route path="/signup" element={!isAuthenticated ? <SignUp /> : <Navigate to="/dashboard" />} />
+        <Route path="/login" element={<Navigate to="/signin" replace />} />
+        <Route path="/register" element={<Navigate to="/signup" replace />} />
 
         {/* Protected Routes */}
-        <Route path="/" element={isAuthenticated ? <Layout /> : <Navigate to="/login" />}>
+        <Route path="/" element={isAuthenticated ? <Layout /> : <Navigate to="/signin" />}>
           <Route index element={<Navigate to="/dashboard" />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="jobs" element={<Jobs />} />

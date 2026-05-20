@@ -1,22 +1,31 @@
 import { useEffect, useState } from 'react';
-import { Building, MapPin, DollarSign, ExternalLink, BookmarkPlus, RefreshCw, Zap } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Building, MapPin, DollarSign, ExternalLink, BookmarkPlus, RefreshCw, Zap, Sparkles, ChevronDown } from 'lucide-react';
 import { useJobStore } from '../store/jobStore';
 import { apiClient } from '../api/client';
+
 
 const SOURCES = ['all', 'linkedin', 'internshala', 'unstop', 'mock'];
 
 export default function Jobs() {
-  const { jobs, fetchJobs, saveJob, isLoading } = useJobStore();
+  const { jobs, fetchJobs, saveJob, selectJob, isLoading } = useJobStore();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [activeSource, setActiveSource] = useState('all');
   const [isScanning, setIsScanning] = useState(false);
   const [scanMessage, setScanMessage] = useState('');
   const [sourceCounts, setSourceCounts] = useState<Record<string, number>>({});
+  const [activeDropdownJobId, setActiveDropdownJobId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchJobs();
     loadSourceCounts();
+
+    const handleGlobalClick = () => setActiveDropdownJobId(null);
+    window.addEventListener('click', handleGlobalClick);
+    return () => window.removeEventListener('click', handleGlobalClick);
   }, [fetchJobs]);
+
 
   const loadSourceCounts = async () => {
     try {
@@ -218,21 +227,66 @@ export default function Jobs() {
               </div>
 
               {/* Actions */}
-              <div className="mt-5 pt-4 border-t border-dark-border flex items-center justify-between">
+              <div className="mt-5 pt-4 border-t border-slate-800 flex items-center justify-between relative">
                 <button
-                  onClick={() => saveJob(job.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    saveJob(job.id);
+                  }}
                   className="flex items-center text-sm text-slate-400 hover:text-primary-400 transition-colors"
                 >
                   <BookmarkPlus className="w-4 h-4 mr-1.5" /> Save
                 </button>
-                <a
-                  href={job.apply_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center px-4 py-1.5 bg-primary-600/10 text-primary-400 hover:bg-primary-600/20 rounded-lg text-sm font-medium transition-colors"
-                >
-                  Apply Now <ExternalLink className="w-3.5 h-3.5 ml-1.5" />
-                </a>
+
+                <div className="flex items-center space-x-2">
+                  <div className="relative">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveDropdownJobId(activeDropdownJobId === job.id ? null : job.id);
+                      }}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-500 hover:to-indigo-500 text-white rounded-lg text-xs font-semibold shadow-md shadow-primary-500/20 transition-all"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-white animate-pulse" />
+                      <span>ApplyIQ AI</span>
+                      <ChevronDown className="w-3 h-3 text-slate-200" />
+                    </button>
+
+                    {activeDropdownJobId === job.id && (
+                      <div className="absolute right-0 bottom-full mb-2 w-48 rounded-xl bg-slate-900 border border-slate-855 border-slate-800 p-1.5 shadow-2xl z-30">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            selectJob(job);
+                            navigate('/resumes');
+                          }}
+                          className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white text-xs font-medium transition-colors"
+                        >
+                          Tailored Resume
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            selectJob(job);
+                            navigate('/cover-letter');
+                          }}
+                          className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white text-xs font-medium transition-colors"
+                        >
+                          Tailored Cover Letter
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <a
+                    href={job.apply_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-medium transition-colors"
+                  >
+                    Apply <ExternalLink className="w-3 h-3 ml-1" />
+                  </a>
+                </div>
               </div>
             </div>
           ))}
